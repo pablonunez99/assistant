@@ -3,6 +3,13 @@ package com.localai.agent.local_personal_ai_agent.services
 import android.util.Log
 import java.security.MessageDigest
 import kotlin.math.sqrt
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
+import java.net.HttpURLConnection
+import java.net.URL
+import org.json.JSONObject
+import org.json.JSONArray
 
 class Local_Llama_Engine {
 
@@ -77,6 +84,41 @@ class Local_Llama_Engine {
     // --- Kotlin Fallback Implementation ---
 
     private fun Fallback_Generate_Embedding(Text: String): FloatArray {
+        try {
+            val url = URL("http://127.0.0.1:8080/embedding")
+            val conn = url.openConnection() as HttpURLConnection
+            conn.requestMethod = "POST"
+            conn.setRequestProperty("Content-Type", "application/json; utf-8")
+            conn.doOutput = true
+            conn.doInput = true
+
+            val jsonInput = JSONObject().apply {
+                put("content", Text)
+            }
+
+            OutputStreamWriter(conn.outputStream, "UTF-8").use { writer ->
+                writer.write(jsonInput.toString())
+                writer.flush()
+            }
+
+            if (conn.responseCode == HttpURLConnection.HTTP_OK) {
+                BufferedReader(InputStreamReader(conn.inputStream, "UTF-8")).use { reader ->
+                    val response = reader.readText()
+                    val json = JSONObject(response)
+                    val embeddingJson = json.optJSONArray("embedding")
+                    if (embeddingJson != null) {
+                        val embedding = FloatArray(embeddingJson.length())
+                        for (i in 0 until embeddingJson.length()) {
+                            embedding[i] = embeddingJson.getDouble(i).toFloat()
+                        }
+                        return embedding
+                    }
+                }
+            }
+        } catch (e: Throwable) {
+            Log.e("Local_Llama_Engine", "Local llama-server embedding query failed, using offline fallback", e)
+        }
+
         val Embedding = FloatArray(128)
         val Words = Text.lowercase().split(Regex("[^a-zA-Z0-9$]+")).filter { it.isNotEmpty() }
         if (Words.isEmpty()) {
@@ -111,6 +153,55 @@ class Local_Llama_Engine {
     }
 
     private fun Fallback_Perform_Inference_Stream(Prompt: String, Callback: (String) -> Unit): String {
+        try {
+            val url = URL("http://127.0.0.1:8080/completion")
+            val conn = url.openConnection() as HttpURLConnection
+            conn.requestMethod = "POST"
+            conn.setRequestProperty("Content-Type", "application/json; utf-8")
+            conn.setRequestProperty("Accept", "text/event-stream")
+            conn.doOutput = true
+            conn.doInput = true
+
+            val jsonInput = JSONObject().apply {
+                put("prompt", Prompt)
+                put("stream", true)
+                put("n_predict", 256)
+            }
+
+            OutputStreamWriter(conn.outputStream, "UTF-8").use { writer ->
+                writer.write(jsonInput.toString())
+                writer.flush()
+            }
+
+            if (conn.responseCode == HttpURLConnection.HTTP_OK) {
+                val responseBuilder = StringBuilder()
+                BufferedReader(InputStreamReader(conn.inputStream, "UTF-8")).use { reader ->
+                    var line: String?
+                    while (reader.readLine().also { line = it } != null) {
+                        val cleanedLine = line!!.trim()
+                        if (cleanedLine.startsWith("data:")) {
+                            val data = cleanedLine.substring(5).trim()
+                            if (data.isNotEmpty()) {
+                                try {
+                                    val json = JSONObject(data)
+                                    val content = json.optString("content", "")
+                                    if (content.isNotEmpty()) {
+                                        responseBuilder.append(content)
+                                        Callback(content)
+                                    }
+                                } catch (e: Exception) {
+                                    // ignore json parse error
+                                }
+                            }
+                        }
+                    }
+                }
+                return responseBuilder.toString()
+            }
+        } catch (e: Throwable) {
+            Log.e("Local_Llama_Engine", "Local llama-server connection failed, using offline fallback", e)
+        }
+
         val Lower = Prompt.lowercase()
         val Response: String
 
