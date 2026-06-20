@@ -1,4 +1,4 @@
-## Local Build Constraints
-- Do not attempt to run local Flutter or Android compilation/build commands (e.g., `flutter run`, `flutter build apk`, `./gradlew assembleDebug`).
-- Focus solely on writing clean, structurally correct, and build-ready code.
-- Prepare files for git commit and remote pull; the user will compile and execute the project in their separate Android environment.
+# Rules
+- Compilation and fixing errors is allowed in the Termux environment.
+- After compiling an APK, move or copy the output APK to the shared downloads directory at `~/storage/downloads/` so the user can easily install it on the device.
+- Do NOT use the `flutter` CLI for building/compiling on Termux. Instead, follow the native Gradle build workflow described in the project-scoped skill `compile_native_android`.

@@ -148,7 +148,7 @@ class MainActivity : FlutterActivity() {
                                 Matches.add(Match_Data)
                             }
 
-                            val Sorted = Matches.sortedByDescending { It["similarity"] as Double }.take(Limit)
+                            val Sorted = Matches.sortedByDescending { it["similarity"] as Double }.take(Limit)
 
                             withContext(Dispatchers.Main) {
                                 Result.success(Sorted)
