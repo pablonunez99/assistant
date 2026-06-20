@@ -111,7 +111,7 @@ class MainActivity : FlutterActivity() {
                         val Unprocessed = Log_Dao.Get_Unprocessed_Raw_Logs()
 
                         val Engine = Local_Llama_Engine()
-                        Engine.Init_Engine("local_model_path_placeholder.gguf")
+                        Engine.Init_Engine("/storage/emulated/0/Download/gemma-4-E4B-it-Q4_K_M.gguf")
 
                         var Count = 0
                         for (Log in Unprocessed) {
@@ -290,7 +290,7 @@ class MainActivity : FlutterActivity() {
 
                 val Full_Prompt = "SYSTEM: Eres un Asistente Personal. Contexto: $Context_Str\nUSER: $Prompt\nASSISTANT:"
 
-                Engine.Init_Engine("local_model_path_placeholder.gguf")
+                Engine.Init_Engine("/storage/emulated/0/Download/gemma-4-E4B-it-Q4_K_M.gguf")
 
                 val Response_Builder = StringBuilder()
                 Engine.Perform_Inference_Stream(Full_Prompt) { Token ->
@@ -363,7 +363,7 @@ class MainActivity : FlutterActivity() {
                             val Unprocessed = Log_Dao.Get_Unprocessed_Raw_Logs()
 
                             val Engine = Local_Llama_Engine()
-                            Engine.Init_Engine("local_model_path_placeholder.gguf")
+                            Engine.Init_Engine("/storage/emulated/0/Download/gemma-4-E4B-it-Q4_K_M.gguf")
 
                             var Count = 0
                             for (Log in Unprocessed) {
@@ -490,7 +490,7 @@ class MainActivity : FlutterActivity() {
                     CoroutineScope(Dispatchers.IO).launch {
                         try {
                             val Engine = Local_Llama_Engine()
-                            Engine.Init_Engine("local_model_path_placeholder.gguf")
+                            Engine.Init_Engine("/storage/emulated/0/Download/gemma-4-E4B-it-Q4_K_M.gguf")
 
                             Engine.Perform_Inference_Stream(Prompt) { Token ->
                                 Main_Scope.launch {
